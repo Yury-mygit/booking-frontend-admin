@@ -1,0 +1,18 @@
+name: booking_admin
+
+services:
+  app:
+    build: .
+    container_name: booking_admin_dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5190:5190"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - shared
+
+networks:
+  shared:
+    external: true
