@@ -1,6 +1,7 @@
 import { api } from "./api.js";
 import { applyStaticI18n, setLang } from "./i18n.js";
 import { route, run } from "./router.js";
+import { applyTheme, watchTheme } from "./theme.js";
 import { initTg, inTelegram, tg } from "./tg.js";
 import { renderDevLogin } from "./views/auth.js";
 import { renderBookings } from "./views/bookings.js";
@@ -9,6 +10,8 @@ import { renderMetrics } from "./views/metrics.js";
 import { renderUsers } from "./views/users.js";
 
 initTg();
+applyTheme();
+watchTheme();
 applyStaticI18n();
 
 document.querySelectorAll("#lang-switch button").forEach((b) => {
