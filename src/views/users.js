@@ -16,11 +16,11 @@ export async function renderUsers() {
         </select>
       </div>
       <div>
-        <label>${t("users.filter.verified")}</label>
-        <select id="f-verified">
-          <option value="">${t("users.filter.verified_any")}</option>
-          <option value="true">${t("users.filter.verified_yes")}</option>
-          <option value="false">${t("users.filter.verified_no")}</option>
+        <label>${t("users.filter.partner_status")}</label>
+        <select id="f-status">
+          <option value="">${t("users.filter.status_any")}</option>
+          <option value="pending">${t("users.filter.status_pending")}</option>
+          <option value="verified">${t("users.filter.status_verified")}</option>
         </select>
       </div>
     </div>
@@ -28,38 +28,25 @@ export async function renderUsers() {
     <div id="modal-mount"></div>`;
 
   document.getElementById("f-role").onchange = load;
-  document.getElementById("f-verified").onchange = load;
+  document.getElementById("f-status").onchange = load;
   load();
 }
 
 async function load() {
   const role = document.getElementById("f-role").value;
-  const verified = document.getElementById("f-verified").value;
+  const status = document.getElementById("f-status").value;
   const list = document.getElementById("list");
   list.innerHTML = t("app.loading");
   try {
-    const users = await api.listUsers({ role, verified });
+    const filters = { role };
+    if (status === "pending") filters.pending = "true";
+    else if (status === "verified") filters.verified = "true";
+    const users = await api.listUsers(filters);
     if (!users.length) {
       list.innerHTML = `<p class="muted">${t("users.empty")}</p>`;
       return;
     }
-    list.innerHTML = users
-      .map(
-        (u) => `
-        <div class="card">
-          <div><b>${escapeHtml(u.first_name || "—")}</b>
-            <span class="status-pill ${u.role}">${u.role}</span>
-            ${u.is_verified_partner ? `<span class="status-pill verified">verified</span>` : ""}
-          </div>
-          <div class="meta">${t("users.tg", { tg: u.telegram_id })} · uid=${u.id}</div>
-          <div class="meta">${t("users.created", { dt: u.created_at.slice(0, 10) })}</div>
-          <div class="row-actions">
-            ${u.role === "partner" ? `<button class="secondary" data-verify="${u.id}">${t("users.btn_verify")}</button>` : ""}
-            ${u.role !== "admin" ? `<button class="secondary" data-promote="${u.id}">${t("users.btn_promote")}</button>` : ""}
-          </div>
-        </div>`,
-      )
-      .join("");
+    list.innerHTML = users.map(renderCard).join("");
     list.querySelectorAll("[data-verify]").forEach((b) => {
       b.onclick = () => openVerify(b.dataset.verify);
     });
@@ -74,6 +61,44 @@ async function load() {
   } catch (e) {
     list.innerHTML = `<div class="error">${t("app.error", { msg: e.message })}</div>`;
   }
+}
+
+function renderCard(u) {
+  const name = [u.first_name, u.last_name].filter(Boolean).map(escapeHtml).join(" ") || "—";
+  const handle = u.username ? `<span class="muted small">@${escapeHtml(u.username)}</span>` : "";
+  const contactParts = [];
+  if (u.phone) contactParts.push(escapeHtml(u.phone));
+  if (u.email) contactParts.push(escapeHtml(u.email));
+  const contact = contactParts.length
+    ? `<div class="meta">${contactParts.join(" · ")}</div>`
+    : "";
+  const stats = u.role === "partner"
+    ? `<div class="meta">${t("users.stats", { h: u.hotels_count, b: u.bookings_count })}</div>`
+    : (u.bookings_count
+        ? `<div class="meta">${t("users.client_bookings", { b: u.bookings_count })}</div>`
+        : "");
+  const partnerPill = u.is_pending_partner
+    ? `<span class="status-pill pending">${t("users.pill.pending")}</span>`
+    : (u.is_verified_partner
+        ? `<span class="status-pill verified">${t("users.pill.verified")}</span>`
+        : "");
+  const showVerify = u.role === "partner" && !u.is_verified_partner;
+  const showPromote = u.role !== "admin";
+  return `
+    <div class="card">
+      <div><b>${name}</b> ${handle}
+        <span class="status-pill ${u.role}">${u.role}</span>
+        ${partnerPill}
+      </div>
+      <div class="meta">${t("users.tg", { tg: u.telegram_id })} · uid=${u.id}</div>
+      ${contact}
+      ${stats}
+      <div class="meta">${t("users.created", { dt: u.created_at.slice(0, 10) })}</div>
+      <div class="row-actions">
+        ${showVerify ? `<button class="primary" data-verify="${u.id}">${t("users.btn_verify")}</button>` : ""}
+        ${showPromote ? `<button class="secondary" data-promote="${u.id}">${t("users.btn_promote")}</button>` : ""}
+      </div>
+    </div>`;
 }
 
 function openVerify(userId) {
