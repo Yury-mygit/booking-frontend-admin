@@ -23,6 +23,7 @@
   --pill-paid-bg: #c8e6c9; --pill-paid-text: #2e7d32;
   --pill-cancelled-bg: #ffcdd2; --pill-cancelled-text: #c62828;
   --pill-refunded-bg: #e1bee7; --pill-refunded-text: #6a1b9a;
+  --pill-superadmin-bg: #fff3c4; --pill-superadmin-text: #8a5d00;
 }
 
 :root[data-theme="dark"] {
@@ -50,6 +51,7 @@
   --pill-paid-bg: #1e4a25; --pill-paid-text: #81c784;
   --pill-cancelled-bg: #4a1e1e; --pill-cancelled-text: #ef9a9a;
   --pill-refunded-bg: #3b1f45; --pill-refunded-text: #ce93d8;
+  --pill-superadmin-bg: #4a3a10; --pill-superadmin-text: #ffd95b;
 }
 
 * { box-sizing: border-box; }
@@ -88,6 +90,7 @@ button.danger { background: var(--surface); color: var(--error); border: 1px sol
 .status-pill.paid { background: var(--pill-paid-bg); color: var(--pill-paid-text); }
 .status-pill.cancelled { background: var(--pill-cancelled-bg); color: var(--pill-cancelled-text); }
 .status-pill.refunded { background: var(--pill-refunded-bg); color: var(--pill-refunded-text); }
+.status-pill.superadmin { background: var(--pill-superadmin-bg); color: var(--pill-superadmin-text); font-weight: 600; }
 .error { color: var(--error); font-size: 13px; margin-top: 6px; }
 .success { color: var(--success); font-size: 13px; margin-top: 6px; }
 .muted { color: var(--text-faint); font-size: 13px; }

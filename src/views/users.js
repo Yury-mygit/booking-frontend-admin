@@ -46,20 +46,41 @@ async function load() {
       list.innerHTML = `<p class="muted">${t("users.empty")}</p>`;
       return;
     }
+    const byId = Object.fromEntries(users.map((u) => [String(u.id), u]));
     list.innerHTML = users.map(renderCard).join("");
     list.querySelectorAll("[data-verify]").forEach((b) => {
       b.onclick = () => openVerify(b.dataset.verify);
     });
     list.querySelectorAll("[data-promote]").forEach((b) => {
-      b.onclick = async () => {
-        try {
-          await api.promoteAdmin(b.dataset.promote);
-          load();
-        } catch (e) { alert(e.message); }
-      };
+      b.onclick = () => runAction(b.dataset.promote, byId, "promote");
+    });
+    list.querySelectorAll("[data-revoke]").forEach((b) => {
+      b.onclick = () => runAction(b.dataset.revoke, byId, "revoke");
+    });
+    list.querySelectorAll("[data-demote]").forEach((b) => {
+      b.onclick = () => runAction(b.dataset.demote, byId, "demote");
     });
   } catch (e) {
     list.innerHTML = `<div class="error">${t("app.error", { msg: e.message })}</div>`;
+  }
+}
+
+async function runAction(userId, byId, kind) {
+  const u = byId[String(userId)];
+  const name = [u?.first_name, u?.last_name].filter(Boolean).join(" ") || `uid=${userId}`;
+  const confirmKey = {
+    revoke: "users.confirm_revoke",
+    demote: "users.confirm_demote",
+    promote: null,
+  }[kind];
+  if (confirmKey && !confirm(t(confirmKey, { name }))) return;
+  try {
+    if (kind === "promote") await api.promoteAdmin(userId);
+    else if (kind === "revoke") await api.revokePartner(userId);
+    else if (kind === "demote") await api.demoteAdmin(userId);
+    load();
+  } catch (e) {
+    alert(t("app.error", { msg: e.message }));
   }
 }
 
@@ -82,13 +103,19 @@ function renderCard(u) {
     : (u.is_verified_partner
         ? `<span class="status-pill verified">${t("users.pill.verified")}</span>`
         : "");
-  const showVerify = u.role === "partner" && !u.is_verified_partner;
+  const superPill = u.is_superadmin
+    ? `<span class="status-pill superadmin">${t("users.pill.superadmin")}</span>`
+    : "";
+  const showVerify = u.is_pending_partner;
+  const showRevoke = u.is_verified_partner;
   const showPromote = u.role !== "admin";
+  const showDemote = u.role === "admin" && !u.is_superadmin;
   return `
     <div class="card">
       <div><b>${name}</b> ${handle}
         <span class="status-pill ${u.role}">${u.role}</span>
         ${partnerPill}
+        ${superPill}
       </div>
       <div class="meta">${t("users.tg", { tg: u.telegram_id })} · uid=${u.id}</div>
       ${contact}
@@ -96,7 +123,9 @@ function renderCard(u) {
       <div class="meta">${t("users.created", { dt: u.created_at.slice(0, 10) })}</div>
       <div class="row-actions">
         ${showVerify ? `<button class="primary" data-verify="${u.id}">${t("users.btn_verify")}</button>` : ""}
+        ${showRevoke ? `<button class="danger" data-revoke="${u.id}">${t("users.btn_revoke_partner")}</button>` : ""}
         ${showPromote ? `<button class="secondary" data-promote="${u.id}">${t("users.btn_promote")}</button>` : ""}
+        ${showDemote ? `<button class="danger" data-demote="${u.id}">${t("users.btn_demote_admin")}</button>` : ""}
       </div>
     </div>`;
 }

@@ -61,6 +61,8 @@ export const api = {
     return call("POST", `/admin/users/${userId}/verify-partner?${qs}`);
   },
   promoteAdmin: (userId) => call("POST", `/admin/users/${userId}/promote-admin`),
+  revokePartner: (userId) => call("POST", `/admin/users/${userId}/revoke-partner`),
+  demoteAdmin: (userId) => call("POST", `/admin/users/${userId}/demote-admin`),
 
   listHotels(status) {
     return call("GET", `/admin/hotels${status ? "?status=" + status : ""}`);
