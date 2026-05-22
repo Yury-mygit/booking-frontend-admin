@@ -27,6 +27,28 @@ route("/hotels", renderHotels);
 route("/bookings", renderBookings);
 
 async function bootstrap() {
+  // TG Desktop выкидывает cross-domain navigation из hub в системный браузер,
+  // и initData на admin-домене не приходит. Hub в этом случае кладёт session
+  // token в URL fragment (#auth=<t>) — поднимаем сессию через /auth/whoami.
+  const authMatch = location.hash.match(/(?:^#|&)auth=([^&]+)/);
+  if (authMatch) {
+    api.adoptToken(decodeURIComponent(authMatch[1]));
+    history.replaceState(null, "", location.pathname + location.search);
+    try {
+      const w = await api.whoami();
+      const user = {
+        id: w.user_id,
+        telegram_id: w.telegram_id,
+        role: w.role,
+        lang: w.lang,
+        first_name: w.first_name,
+        is_superadmin: w.is_superadmin,
+      };
+      api.setSession(api.authToken(), user);
+    } catch {
+      api.clearSession();
+    }
+  }
   if (api.hasToken()) { run(); return; }
   if (inTelegram) {
     try {
